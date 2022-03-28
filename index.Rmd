@@ -1,0 +1,27 @@
+---
+title: "You Shan Shen"
+---
+Master Student, Division of Biostatistics, University of Minnesota.
+
+<div style= "float : left; position : relative; top: 0px; width : 450px; height : 360px; padding-right: 24px; margin-bottom : 0px">
+
+![](./plot/SF Cable car.jpg)
+
+
+</div>
+
+<font size = "4"> 
+My research interests focus on the development of precision medicine, biomarkers, and statistical learning methodology for the analysis of clinical studies. I am particularly interested in addressing cancer immunotherapy with the aim of improving patient health outcomes. 
+</font>  
+  
+  
+  
+<font size = "4">
+As an oncology pharmacist for six years, I enjoyed providing evidence-based research to solve problems and had multiple interprofessional collaborative practice experiences. My work in this area has involved applications of targeted breast cancer biomarkers analysis and evaluating the risk of thrombosis of drugs in males.  
+</font>
+
+
+<font size = "4">
+"People see you for your abilities; people respect you for your attitude" - "The Intern"
+
+</font>

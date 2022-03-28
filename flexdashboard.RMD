@@ -1,0 +1,240 @@
+---
+title: "Global COVID-19 from 2020 - Present"
+author: "You Shan Shen"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include = FALSE, echo = FALSE}
+library(tidyverse)
+library(lubridate)
+library(gt)
+library(paletteer)
+library(plotly)
+library(flexdashboard)
+
+#Working directory for .RMD
+knitr::opts_knit$set(echo = TRUE,
+                     root.dir = rprojroot::find_rstudio_root_file())
+
+#Controlling figure output in markdown
+knitr::opts_chunk$set(
+#  fig.height =   
+  fig.width = 6,
+#  fig.asp = .5,
+  out.width = "90%",
+#  out.height = 
+ fig.align  = "center",
+  cache = FALSE,
+  eval  = TRUE,
+  echo  = TRUE,
+  warning = FALSE
+)
+
+#My Colours (from viridis)
+my_purple <- "#440154FF"
+my_yellow <- "#FDE725FF"
+
+#Set Theme for ggplot2
+theme_set(theme_bw() + theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom"))
+
+#Set Scientific notation output and decimal places for knitr
+options(scipen = 999)
+options(digits = 4)
+options(dplyr.summarise.inform = FALSE)
+```
+
+
+```{r data_read, include = FALSE}
+library(dplyr)
+library(gt)
+library(stringr)
+library(lubridate)
+library(purrr)
+library(DataExplorer)
+
+file_dir  <- "./data/"
+data_files <- list.files(file_dir)
+file_paths <- str_c(file_dir, data_files)
+file_paths[1:7]
+
+word_extractor <- function(string, sep, index) {
+  word <- str_split_fixed(string, sep, str_length(string))[, index] %>% 
+          str_replace_all("[[:punct:]]", "") 
+  return(word) 
+}
+
+t1_file_list <- list.files(file_dir, pattern = "19")
+t1_file_list <- t1_file_list[!str_detect(t1_file_list, c("data"))]
+
+continent.df <- tibble(
+           file_dir   = "./data/", 
+           file_list  = t1_file_list, 
+           continent = word_extractor(string = file_list, sep = "[_,.]", index = 2),
+           file_paths = str_c(file_dir, file_list)
+          ) %>%
+          dplyr::select(continent, file_paths) 
+
+Sys.setlocale("LC_TIME", "C")
+format(Sys.Date(), "%Y-%b-%d")
+
+Continent_data <- continent.df %>%
+              mutate(
+                data = map(.x = file_paths, ~read_csv(.x, show_col_types = FALSE))
+              ) %>%
+              dplyr::select(-file_paths)
+
+unnest_Continent_data <- Continent_data %>% 
+  unnest(c(data)) %>%
+  as_tibble() %>%
+ janitor::clean_names() %>%
+    rename(
+       country  = location,
+       "7 days new cases" = new_cases_smoothed,
+       "7 days new deaths" = new_deaths_smoothed 
+    ) %>%
+    mutate(
+     month   = month(date, label = TRUE, abbr = TRUE),
+     dow     = wday(date, 
+                   label = TRUE, 
+                   abbr  = FALSE, 
+                   week_start = getOption("lubridate.week.start", 1),
+                   locale = Sys.getlocale("LC_TIME")),
+     country = as.factor(country),
+     continent = str_to_title(continent) %>% as.factor()
+    ) %>%
+  dplyr::select( -c("population_density", "diabetes_prevalence", "gdp_per_capita", "median_age", "human_development_index")) 
+
+unnest_Continent_data %>%  head() %>% gt() %>% as_raw_html
+
+
+covid_data <- unnest_Continent_data %>%
+  filter(!is.na(new_cases), !is.na(new_deaths) ) %>%
+  nest(-c(continent, country)) %>% 
+  mutate(
+    cumulative_cases = map(.x = data, ~.x %>% pull(new_cases) %>% cumsum()),
+    cumulative_deaths = map(.x = data, ~.x %>% pull(new_deaths) %>% cumsum())
+  ) %>% 
+  unnest(c(cumulative_cases,cumulative_deaths,data))
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Cases for Days of the Week
+
+```{r,echo = FALSE, fig.width = 1, fig.height = 12}
+
+
+dow_data <- covid_data %>%
+   dplyr::select( date, new_cases, new_deaths, month, dow) %>%
+   mutate(YM =  format(date, format = "%Y-%m") ,                        
+          year = lubridate::year(ymd(date)) %>% as.factor()) %>%
+  group_by(date, dow) %>%
+  summarise(across(c(new_cases, new_deaths),
+                     list(sum = sum),
+                    na.rm = TRUE, 
+                    .names = "{.col}_{.fn}")) %>%
+  ungroup() %>%
+  mutate(dow = as.factor(dow) %>% fct_reorder(new_cases_sum, .desc = TRUE)) 
+
+DOW_cases_gg <- dow_data %>%
+   mutate(text_label = str_c(date,
+                            "\n Days of the week - ", dow ,
+                            "\n New cases - ", new_cases_sum
+                            
+  )) %>%
+  ggplot(aes(x = date, y = new_cases_sum, colour = dow, text = text_label)) +
+  geom_point(alpha    = 0.16,
+             shape    = 16,
+             size     = 2,
+             position = position_jitter(width  = 0, 
+                                        height = 0.5e+06)) +
+  stat_smooth(method  = "loess", 
+              formula = "y ~ x",
+              se      = FALSE,
+              span    = 0.5,
+              alpha   = 0.44) +
+    labs(
+      x = "Date",
+      y = "New Cases",
+      title = "Cases for Days of the Week"
+    ) +
+    scale_colour_viridis_d("Days of the week") +
+    scale_x_date( 
+    date_breaks = "1 month", 
+    date_minor_breaks = "1 week", 
+    date_labels = "%b '%y" 
+    ) +
+    theme(axis.text.x = element_text(angle = 45,
+                                     vjust = 1.24,
+                                     hjust = 1.2,
+                                     size  = 10),
+          axis.text.y = element_text(size  = 10))
+
+ggplotly(DOW_cases_gg, tooltip = "text")  
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### New cases Over Time with 7-day Rolling Average Overlaid
+
+```{r, echo = FALSE, fig.width = 4, fig.height = 6}
+
+rolling_average <- covid_data %>%
+  dplyr::select( date, `7 days new cases`, `7 days new deaths`, new_cases, new_deaths) %>%
+  group_by(date) %>%
+  summarise(across(c(`7 days new cases`, `7 days new deaths`, new_cases, new_deaths),
+                   list(sum = sum),
+                   na.rm = TRUE,
+                   .names = "{.col}_{.fn}")) %>%
+  ungroup() 
+  
+rolling_average_cases_gg <- rolling_average %>%
+  mutate(text_label = str_c(date,
+                            "\n new cases - ",        `new_cases_sum`,
+                            "\n 7 days new cases - ", `7 days new cases_sum`
+                            
+  )) %>%
+  ggplot(aes( x = date, text = text_label) ) +
+    geom_col(aes(y = new_cases_sum, fill = "New Cases"), size = 1) +
+    geom_line(aes(y = `7 days new cases_sum`, color = "7 Days New Cases"), size = 1, group = 1) +
+    labs(
+      x = "Date",
+      y = "Number of Cases",
+      color = "Legend",
+      title = " New cases Over Time with 7-day Rolling Average Overlaid") +
+  scale_fill_manual(name = "", values = c("New Cases"= "#CCCCFF")) +
+  scale_color_manual(name = "", values = c("7 Days New Cases" = "#6495ED")) 
+  
+ggplotly(rolling_average_cases_gg, tooltip = "text")  
+
+```
+
+### New deaths Over Time with 7-day Rolling Average Overlaid
+
+```{r, echo = FALSE, fig.width = 4, fig.height = 6}
+
+ rolling_average %>%
+  mutate(text_label = str_c(date,
+                            "\n new deaths - ",        `new_deaths_sum`,
+                            "\n 7 days new deaths - ", `7 days new deaths_sum`
+  )) %>%
+  plot_ly(
+    x = ~date,
+    y = ~new_deaths_sum,
+    name = " New Deaths",
+    type = 'bar',
+    colors = 'lightsalmon') %>%
+    add_trace(y = ~`7 days new deaths_sum`, type = 'scatter', mode = 'lines', name = "7 Days New Deaths") %>%
+layout(title = "New deaths Over Time with 7-day Rolling Average Overlaid",
+       xaxis = list(title = "Date"),
+       yaxis = list(title = "Number of Deaths"))
+    
+   
+```
+
+

@@ -1,0 +1,80 @@
+---
+title: resume
+name: You Shan
+surname: Shen
+position: "Biostatistics MS"
+
+phone: (612) 618-3240
+www: Minneapolis, MN 55414
+email:  "shen0464@umn.edu"
+
+output: 
+  vitae::markdowncv:
+    theme: kjhealy
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(vitae)
+```
+
+## COURSE WORK EXPERIENCE
+
+ * • Programming 
+ *   1. SAS base
+ *   2. Advanced R
+ *   Data Wrangling: Data Merges, Clean Data (dplyr, tidyr, forcats, stringr, lubridate, purrr::map), Create Functions.
+ *   Data visualization: Spatial Visualization(ggplot2, ggplotly), Dashboard(flexdashboard), Table listing (gt, gtExtra).
+ *   R markdown, Websites w/R & Github, and HTML.
+ * • Statistical Analysis 
+ *   1. Generalized linear regression 
+ *   2. Poisson regression : handle overdispersion problem
+ *   3. Logistic regression : calculate propensity score, effect size and create a contingency table
+ *   4. Kaplan-Meier method : redistribution to the right with cancer data.
+ *   5. Proportional hazards model
+ *   6. Missing Data
+ *   7. Bootstrap    
+ 
+ * • Clinical Trials
+ *   Randomization, Endpoint, Inclusion and Exclusion Criteria, Non-inferiority, Sample size and Power calculations.
+
+
+## WORK EXPERIENCE
+
+```{r}
+library(tibble)
+tribble(
+  ~Year, ~Type, ~Desc,
+  "2015-2021", "Oncology", "Tri-Service General Hospital (TSGH)-Taipei, Taiwan"
+) %>% 
+  brief_entries(
+    glue::glue("Pharmacist in {Type}"),
+    Year, 
+    Desc
+  )
+```
+ * •	Poster submission to Taiwan Society of Health-System Pharmacists with colleagues.
+   *  Topic: A Case report: pros and cons of Tamoxifen or aromatase inhibitors in male breast cancer. 
+   *  Focus on biomarkers (Ki-67, ER, PR) analysis and evaluating the risk of thrombosis of drugs.
+ * •	Provide clinicians and patients with the best available evidence when encountering the task of making decisions to achieve patients’ preferable options under Shared Decision Making (SDM).
+ * •	Participate in decision-making in marrow transplantation meetings, conduct medicine consultation for cancer patients, and evaluate the cost-effectiveness of pharmacotherapy.
+
+## Education
+
+```{r}
+
+tribble(
+  ~ Degree, ~ Year, ~ Institution, ~ Where,
+  "Master of Science", "2021-Present", "University of Minnesota", "Minneapolis, MN",
+  "Bachelor of Science", "2011-2015", "Chia Nan University of Pharmacy and Science", "Tainan, Taiwan"
+) %>% 
+  detailed_entries(Degree, Year, Institution, Where)
+
+ 
+```
+
+
+## LANGUAGE COMPETENCIES
+
+ * •	English: fluent (speaking, listening, reading, writing)
+ * •	Mandarin: native language 

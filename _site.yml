@@ -1,0 +1,27 @@
+name: "Yay internet!"
+header-includes: 
+  \usepackage{graphicx}
+  \usepackage{float}
+output_dir: "."
+navbar:
+  title: "Home"
+  right:
+    - text: "About"
+      href: about.html
+    - text: "Professional Documents"
+      menu:
+          - text: "Resume/CV"
+            href: resume.html
+    - text: "Recent Work"
+      menu:
+          - text: "Flexdashboard"
+            href: fleshdashboard.html        
+    - icon: fa-envelope fa-lg
+      href: mailto:<shen0464@umn.edu>
+    - icon: fa-github fa-lg
+      href: https://github.com/YouShanShen
+    - icon: fa-brands fa-linkedin
+      href: https://www.linkedin.com/in/you-shan-shen 
+output:  
+   html_document:
+    theme: flatly
