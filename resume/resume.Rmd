@@ -5,7 +5,7 @@ surname: Shen
 position: "Biostatistics MS"
 
 phone: (612) 618-3240
-www: Minneapolis, MN 55414
+address: Minneapolis, MN 55414
 email:  "shen0464@umn.edu"
 
 output: 
@@ -25,7 +25,7 @@ library(vitae)
  *   2. Advanced R
  *   Data Wrangling: Data Merges, Clean Data (dplyr, tidyr, forcats, stringr, lubridate, purrr::map), Create Functions.
  *   Data visualization: Spatial Visualization(ggplot2, ggplotly), Dashboard(flexdashboard), Table listing (gt, gtExtra).
- *   R markdown, Websites w/R & Github, and HTML.
+ *   R markdown, Websites w/R & Github, HTML and experience implementing version control process.
  * • Statistical Analysis 
  *   1. Generalized linear regression 
  *   2. Poisson regression : handle overdispersion problem
@@ -65,7 +65,7 @@ tribble(
 
 tribble(
   ~ Degree, ~ Year, ~ Institution, ~ Where,
-  "Master of Science", "2021-Present", "University of Minnesota", "Minneapolis, MN",
+  "Master of Science", "2021-Present", "University of Minnesota - Twin Cities", "Minneapolis, MN",
   "Bachelor of Science", "2011-2015", "Chia Nan University of Pharmacy and Science", "Tainan, Taiwan"
 ) %>% 
   detailed_entries(Degree, Year, Institution, Where)

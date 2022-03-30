@@ -127,7 +127,6 @@ Column {data-width=650}
 
 ```{r,echo = FALSE, fig.width = 1, fig.height = 12}
 
-
 dow_data <- covid_data %>%
    dplyr::select( date, new_cases, new_deaths, month, dow) %>%
    mutate(YM =  format(date, format = "%Y-%m") ,                        
@@ -141,13 +140,15 @@ dow_data <- covid_data %>%
   mutate(dow = as.factor(dow) %>% fct_reorder(new_cases_sum, .desc = TRUE)) 
 
 DOW_cases_gg <- dow_data %>%
-   mutate(text_label = str_c(date,
+  mutate(text_label = str_c(date,
                             "\n Days of the week - ", dow ,
                             "\n New cases - ", new_cases_sum
                             
   )) %>%
-  ggplot(aes(x = date, y = new_cases_sum, colour = dow, text = text_label)) +
-  geom_point(alpha    = 0.16,
+   ggplot(aes(x = date, y = new_cases_sum, colour = dow)) +
+  geom_point(
+    aes(text = text_label),
+    alpha    = 0.16,
              shape    = 16,
              size     = 2,
              position = position_jitter(width  = 0, 
@@ -159,8 +160,7 @@ DOW_cases_gg <- dow_data %>%
               alpha   = 0.44) +
     labs(
       x = "Date",
-      y = "New Cases",
-      title = "Cases for Days of the Week"
+      y = "New Cases"
     ) +
     scale_colour_viridis_d("Days of the week") +
     scale_x_date( 
@@ -168,13 +168,15 @@ DOW_cases_gg <- dow_data %>%
     date_minor_breaks = "1 week", 
     date_labels = "%b '%y" 
     ) +
+  scale_y_continuous(labels = scales::label_number_si())+
     theme(axis.text.x = element_text(angle = 45,
                                      vjust = 1.24,
                                      hjust = 1.2,
                                      size  = 10),
           axis.text.y = element_text(size  = 10))
 
-ggplotly(DOW_cases_gg, tooltip = "text")  
+ggplotly(DOW_cases_gg, tooltip = "text") %>% layout( hovermode = 'x unified')
+
 ```
 
 Column {data-width=350}
@@ -205,12 +207,13 @@ rolling_average_cases_gg <- rolling_average %>%
     labs(
       x = "Date",
       y = "Number of Cases",
-      color = "Legend",
-      title = " New cases Over Time with 7-day Rolling Average Overlaid") +
-  scale_fill_manual(name = "", values = c("New Cases"= "#CCCCFF")) +
-  scale_color_manual(name = "", values = c("7 Days New Cases" = "#6495ED")) 
+      color = "Legend"
+     ) +
+  scale_fill_manual(name = "", values = c("New Cases" = "#CCCCFF")) +
+  scale_color_manual(name = "", values = c("7 Days New Cases" = "#6495ED")) +
+  scale_y_continuous(labels = scales::label_number_si())
   
-ggplotly(rolling_average_cases_gg, tooltip = "text")  
+ggplotly(rolling_average_cases_gg, tooltip = "text") 
 
 ```
 
@@ -223,18 +226,12 @@ ggplotly(rolling_average_cases_gg, tooltip = "text")
                             "\n new deaths - ",        `new_deaths_sum`,
                             "\n 7 days new deaths - ", `7 days new deaths_sum`
   )) %>%
-  plot_ly(
-    x = ~date,
-    y = ~new_deaths_sum,
-    name = " New Deaths",
-    type = 'bar',
-    colors = 'lightsalmon') %>%
-    add_trace(y = ~`7 days new deaths_sum`, type = 'scatter', mode = 'lines', name = "7 Days New Deaths") %>%
-layout(title = "New deaths Over Time with 7-day Rolling Average Overlaid",
+  plot_ly( x = ~date) %>%
+    add_trace(y = ~new_deaths_sum, type = 'bar', name = "New Deaths", marker = list(color = " lightsalmon") ) %>%
+    add_trace(y = ~`7 days new deaths_sum`, type = 'scatter', mode = 'lines', name = "7 Days New Deaths",line = list(color = "indianred") ) %>%
+layout(
        xaxis = list(title = "Date"),
-       yaxis = list(title = "Number of Deaths"))
-    
-   
+       yaxis = list(title = "Number of Deaths"),
+       hovermode = 'x unified')
 ```
-
 
