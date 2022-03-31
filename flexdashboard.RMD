@@ -175,14 +175,14 @@ DOW_cases_gg <- dow_data %>%
                                      size  = 10),
           axis.text.y = element_text(size  = 10))
 
-ggplotly(DOW_cases_gg, tooltip = "text") %>% layout( hovermode = 'x unified')
+ggplotly(DOW_cases_gg, tooltip = "text") %>% layout( hovermode = 'x unified', hoverlabel = list(font=list(size=10)))
 
 ```
 
 Column {data-width=350}
 -----------------------------------------------------------------------
 
-### New cases Over Time with 7-day Rolling Average Overlaid
+### New Cases Over Time with 7-day Rolling Average Overlaid
 
 ```{r, echo = FALSE, fig.width = 4, fig.height = 6}
 
@@ -211,13 +211,18 @@ rolling_average_cases_gg <- rolling_average %>%
      ) +
   scale_fill_manual(name = "", values = c("New Cases" = "#CCCCFF")) +
   scale_color_manual(name = "", values = c("7 Days New Cases" = "#6495ED")) +
-  scale_y_continuous(labels = scales::label_number_si())
+  scale_y_continuous(labels = scales::label_number_si())+
+  theme(axis.text.x = element_text(angle = 45,
+                                     vjust = 1.24,
+                                     hjust = 1.2,
+                                     size  = 10),
+          axis.text.y = element_text(size  = 10))
   
 ggplotly(rolling_average_cases_gg, tooltip = "text") 
 
 ```
 
-### New deaths Over Time with 7-day Rolling Average Overlaid
+### New Deaths Over Time with 7-day Rolling Average Overlaid
 
 ```{r, echo = FALSE, fig.width = 4, fig.height = 6}
 
