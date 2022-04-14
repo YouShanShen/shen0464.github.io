@@ -1,6 +1,6 @@
 ---
-title: "Your Title Here"
-author: "Your Name"
+title: "Spatial Dashboard"
+author: "You Shan Shen"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -56,8 +56,125 @@ options(dplyr.summarise.inform = FALSE)
 ```
 
 
-```{r ,include=FALSE,data_read, include = FALSE}
+Column {data-width=600}
+-----------------------------------------------------------------------
 
+### (1) Hennepin County, MN 2020 ACS Total Divorce
+```{r ACS, echo = FALSE, results = "hide", warning = FALSE, message = FALSE}
+
+hennepin.box     <- osmdata::getbb("hennepin")
+hennepin.outline <- osmdata::getbb("hennepin", format_out = "polygon")[[1]] %>%
+  as_tibble() %>%
+  rename(longitude = V1, latitude = V2)
+
+hennepin_base.map <- get_map(
+                       location = hennepin.box,
+                       source   = "google",
+                       maptype  = "roadmap",
+                       crop = TRUE
+                      )
+
+hennepin_base.gg <- ggmap(hennepin_base.map) +
+  geom_polygon(data = hennepin.outline, aes(x = longitude, y = latitude), colour = "black", size = 1.6, alpha = 0.1) +
+  theme_map() +
+  theme(
+    plot.title   = element_text(size  = 16,
+                                hjust = 0.5),
+    legend.text  = element_text(size = 16),
+    legend.title = element_text(size = 16),
+    legend.position = "right"
+  )
+
+mn_divorce.df <- get_acs(
+  geography = "tract",
+  variables = "B12006_046", 
+  state     = "MN",
+  county    = "Hennepin",
+  year      = 2020,
+  geometry  = TRUE
+)
+
+mn_zipcode <- read_csv("./data/mn_zipcodes.csv", show_col_types = FALSE) %>%
+  mutate(zip_code = as.character(zip_code),
+         county   = as_factor(county) ) %>%
+  bind_rows(.,
+            tibble(zip_code = as.character(c(55344,55346,55347)),
+                   city     = rep("Eden Prairie",3),
+                   county   = rep("Hennepin",3)) )
+
+
+zipcode_divorce_df <- get_acs(
+  geography = "zip code tabulation area",
+  variables = "B12006_046",
+  geometry = TRUE) %>%
+  janitor::clean_names() %>%
+  mutate(zipcod = str_remove(name,"ZCTA5 "))
+
+mn_zip_city <- inner_join(
+  zipcode_divorce_df,
+  mn_zipcode,
+  by = c("zipcod" = "zip_code")
+)
+
+mn_divorce_zip_plotly <- mn_zip_city %>%
+  mutate(
+    text_label = str_c(
+                  "City: ",
+                  city,
+                  "\nZipcode: ",
+                  zipcod,
+                  "\nTotal Divorce: ",
+                  scales::number(estimate)
+                 )
+  )
+
+
+mn_divorce_zip_ggmap <- hennepin_base.gg +
+  geom_sf(data = mn_divorce_zip_plotly,
+          aes(fill = estimate, text = text_label),
+          colour = "black", size = 0.1,
+          inherit.aes = FALSE  ) +
+  geom_path(data = hennepin.outline,
+            aes(x = longitude, y = latitude),
+            colour = "black", size = 1.2, alpha = 0.6,
+            inherit.aes = FALSE ) +
+  labs(title = "Hennepin County, MN 2020 ACS Total Divorce") +
+  scale_fill_viridis_b("Total Divorce", labels = scales::number) +
+  theme_map() +
+  theme(
+    plot.title = element_text(size = 16,
+                               hjust = 0.5),
+    legend.text = element_text(size = 16),
+    legend.title = element_text(size = 16),
+    legend.position = "right"
+  )
+
+mn_divorce_ggplotly <- ggplotly(mn_divorce_zip_ggmap,
+                                tooltip = "text",
+                                height  = 500,
+                                width   = 700 ) %>%
+  style(hoveron = "fills")
+
+index <- c(3,496)
+replacement <- c("skip","skip")
+
+for (i in 1:length(index)){
+  mn_divorce_ggplotly$x$data[[index[i]]]$hoverinfo <- replacement[i]
+} 
+```
+
+```{r echo = FALSE, fig.width = 4, fig.height = 6}
+mn_divorce_ggplotly
+
+```
+
+
+Column {data-width=400}
+-----------------------------------------------------------------------
+
+### (2) Four Types of Scenic Spots In Minnesota
+
+```{r,echo = FALSE, results = "hide"}
 available_tags("sport")
 
 osm_tourism_sf.df <- opq(bbox = "minnesota") %>%
@@ -80,15 +197,6 @@ tourism_types <- levels(tourism_points.df$tourism)
 n_types <- length(tourism_types)
 my_pallete <- colorFactor(viridis_pal(option = "D")(n_types),domain = tourism_types)
 
-
-```
-
-Column {data-width=650}
------------------------------------------------------------------------
-
-### (1) Four Types of Scenic Spots In Minnesota
-
-```{r,echo = FALSE, fig.width = 1, fig.height = 12}
 leaflet(data = tourism_points.df) %>%
   addProviderTiles('Esri.WorldStreetMap') %>%
   addCircleMarkers(
@@ -120,6 +228,11 @@ tourism_label.df <- tourism_points.df %>%
       website
     ) ) 
   
+
+
+```
+
+```{r echo = FALSE,, fig.width = 1, fig.height = 12}
 leaflet(data = tourism_label.df ) %>%
   addProviderTiles('Esri.WorldStreetMap') %>%
   addCircleMarkers(
@@ -135,124 +248,10 @@ leaflet(data = tourism_label.df ) %>%
     labels   = tourism_types )
 ```
 
-Column {data-width=350}
------------------------------------------------------------------------
-
-### (2) Distribution of Review per Month by Neighbourhood
-
-```{r, echo = FALSE, fig.width = 4, fig.height = 6}
-census_api_key("bb22b614f8387edfa20ab8aaafc09ab5b8c91cc3")
-register_google(key = "AIzaSyC_QlhNj3he8_9xhD4SzS2k4EN-env1dP8")
-
-hennepin.box     <- osmdata::getbb("hennepin")
-hennepin.outline <- osmdata::getbb("hennepin", format_out = "polygon")[[1]] %>%
-  as_tibble() %>%
-  rename(longitude = V1, latitude = V2)
-
-hennepin_base.map <- get_map(
-                       location = hennepin.box,
-                       source   = "google",
-                       maptype  = "roadmap",
-                       crop = TRUE
-                      )
-
-hennepin_base.gg <- ggmap(hennepin_base.map) +
-  geom_polygon(data = hennepin.outline, aes(x = longitude, y = latitude), colour = "black", size = 1.6, alpha = 0.1) +
-  theme_map() +
-  theme(
-    plot.title   = element_text(size  = 16,
-                                hjust = 0.5),
-    legend.text  = element_text(size = 16),
-    legend.title = element_text(size = 16),
-    legend.position = "right"
-  )
-
-
-options(tigris_use_cache = TRUE)
-
-mn_divorce.df <- get_acs(
-  geography = "tract",
-  variables = "B12006_046", 
-  state     = "MN",
-  county    = "Hennepin",
-  year      = 2020,
-  geometry  = TRUE
-)
-
-mn_zipcode <- read_csv("./data/mn_zipcodes.csv", show_col_types = FALSE) %>%
-  mutate(zip_code = as.character(zip_code),
-         county   = as_factor(county) ) %>%
-  bind_rows(.,
-            tibble(zip_code = as.character(c(55344,55346,55437)),
-                   city     = rep("Eden Prairie",3),
-                   county   = rep("Hennepin",3)) )
-
-
-zipcode_divorce_df <- get_acs(
-  geography = "zip code tabulation area",
-  variables = "B12006_046",
-  geometry = TRUE) %>%
-  janitor::clean_names() %>%
-  mutate(zipcod = str_remove(name,"ZCTA5 "))
-
-mn_zip_city <- inner_join(
-  zipcode_divorce_df,
-  mn_zipcode,
-  by = c("zipcod" = "zip_code")
-)
-
-mn_divorce_zip_plotly <- mn_zip_city %>%
-  mutate(
-    text_label = str_c(
-                  "City: ",
-                  city,
-                  "\nZipcode: ",
-                  zipcod,
-                  "\nTotal divorce: ",
-                  scales::number(estimate)
-                 )
-  )
-
-
-mn_divorce_zip_ggmap <- hennepin_base.gg +
-  geom_sf(data = mn_divorce_zip_plotly,
-          aes(fill = estimate, text = text_label),
-          colour = "black", size = 0.1,
-          inherit.aes = FALSE  ) +
-  geom_path(data = hennepin.outline,
-            aes(x = longitude, y = latitude),
-            colour = "black", size = 1.2, alpha = 0.6,
-            inherit.aes = FALSE ) +
-  labs(title = "Hennepin County, MN 2020 ACS Total Divorce") +
-  scale_fill_viridis_b("Total Divorce", labels = scales::number) +
-  theme_map() +
-  theme(
-    plot.title = element_text(size = 16,
-                               hjust = 0.5),
-    legend.text = element_text(size = 16),
-    legend.title = element_text(size = 16),
-    legend.position = "right"
-  )
-
-mn_divorce_ggplotly <- ggplotly(mn_divorce_zip_ggmap,
-                                tooltip = "text",
-                                height  = 600,
-                                width   = 800 ) %>%
-  style(hoveron = "fills")
-
-index <- c(3,495)
-replacement <- c("skip","skip")
-
-for (i in 1:length(index)){
-  mn_divorce_ggplotly$x$data[[index[i]]]$hoverinfo <- replacement[i]
-} 
-
-mn_divorce_ggplotly
-```
 
 ### (3) Resturants in Minnesota, Coloured by Resturant Types
 
-```{r ,include=FALSE,data_read, include = FALSE}
+```{r include = FALSE, echo = FALSE, results = "hide"}
 
 available_tags("shop")
 
@@ -267,9 +266,6 @@ food_points.df <- osm_food_sf.df$osm_points %>%
   #drop_na()%>%
   mutate(shop = str_to_title(shop) %>% as.factor())
 
-```
-
-```{r,echo = FALSE, fig.width = 1, fig.height = 12}
 
 library(htmltools, quietly = TRUE)
 library(fontawesome)
@@ -310,16 +306,18 @@ food_label.df <- food_points.df %>%
       "<br> Website: ", 
       website
     ) ) 
-  
+```
+
+```{r echo = FALSE, , fig.width = 4, fig.height = 6}
 leaflet(data = food_label.df ) %>%
   addProviderTiles('Esri.WorldStreetMap') %>%
   addAwesomeMarkers(icon = ~iconlist[shop],
                     label   = ~map(text_label, HTML)) %>%
   addLegendAwesomeIcon(iconSet = iconlist,
-                       orientation = 'vertical',
+                       orientation = 'horizontal',
                        marker = TRUE,
                        title = htmltools::tags$div(
-                         style = 'font-size: 16px;',
+                         style = 'font-size: 10px;',
                          'Resturant Types'),
                        labelStyle = 'font-size: 10px;',
                        position = "bottomright")
